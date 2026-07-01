@@ -1,16 +1,16 @@
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, extname } from 'path';
 
-const MODULES = ['worker.js', 'utils.js', 'db.js', 'services.js'];
+const MODULES = ['bundled_deploy.mjs'];
 const SCRIPTS = {};
 for (const m of MODULES) {
-  SCRIPTS[m] = readFileSync('src/' + m, 'utf8');
+  SCRIPTS[m] = readFileSync(m, 'utf8');
 }
 const TOTAL_KB = Object.values(SCRIPTS).reduce((s, c) => s + c.length, 0) / 1024;
-const ACCOUNT_ID = '02a5ee785952a4e4b7b6da209e10c53d';
+const ACCOUNT_ID = 'a3aa2b215031e097488bb52593789c18';
 const SCRIPT_NAME = 'poetry';
-const D1_ID = '9f979733-d291-4e4a-af29-7cb463ca534a';
-const KV_ID = 'fd50e45d91a6485b944e69056960dccd';
+const D1_ID = 'c139e4fb-afee-4752-978e-f323bbec4aa7';
+const KV_ID = '1994525bead042229fed7f2bd41d2f3a';
 const TOKEN = process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN;
 
 if (!TOKEN) {

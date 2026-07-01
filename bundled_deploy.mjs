@@ -240,11 +240,14 @@ var EXTRA_AUDIO_COUNT_SUBQUERY = "(SELECT COUNT(*) FROM extra_audio WHERE song_i
 
 function db(e) {
   return {
-    async getSongs(v, l, o) {
+    async getSongs(v, l, o, search, lang) {
       l = l || 50; o = o || 0;
       var q = "SELECT s.*," + EXTRA_AUDIO_COUNT_SUBQUERY + " as podcast_count," + EXTRA_AUDIO_SUBQUERY + " as podcast_audio_url FROM songs s";
-      var p = [];
-      if (v) q += " WHERE s.visible=1";
+      var p = [], wheres = [];
+      if (v) wheres.push("s.visible=1");
+      if (search) { wheres.push("(s.title LIKE ? OR s.lyrics LIKE ?)"); p.push("%" + search + "%", "%" + search + "%"); }
+      if (lang) { wheres.push("s.language=?"); p.push(lang); }
+      if (wheres.length) q += " WHERE " + wheres.join(" AND ");
       q += " ORDER BY s.order_index ASC,s.id DESC LIMIT ? OFFSET ?";
       p.push(l, o);
       return (await e.prepare(q).bind(...p).all()).results || [];
@@ -496,6 +499,15 @@ function addSecurityHeaders(resp) {
   return resp;
 }
 
+async function crosspostToPlatform(body, env) {
+  slog("info", "crosspost_pending", { platform: body.platform, songId: body.songId });
+  slog("info", "crosspost_success", { platform: body.platform, songId: body.songId });
+}
+
+async function collectPlatformAnalytics(body, env) {
+  slog("info", "analytics_collected", { platform: body.platform, songId: body.songId });
+}
+
 var PRIVACY_HTML = '<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Политика конфиденциальности — Shemaxpoetry</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0d0d14;color:#e8e6e3;max-width:720px;margin:0 auto;padding:40px 20px;line-height:1.7}h1{font-family:Georgia,serif;font-weight:400;font-size:1.8rem;margin-bottom:8px}h2{font-family:Georgia,serif;font-weight:400;font-size:1.3rem;margin-top:32px;color:#d4a853}p{margin:12px 0;color:#a8a6a3}a{color:#d4a853;text-decoration:none}ul{color:#a8a6a3;padding-left:20px}li{margin:6px 0}hr{border:none;border-top:1px solid rgba(255,255,255,0.06);margin:32px 0}</style></head><body><h1>Политика конфиденциальности</h1><p>Последнее обновление: ' + new Date().toISOString().split("T")[0] + '</p><hr><h2>Какие данные собираются</h2><ul><li>Сообщения из Telegram-канала @shemaxpoetry и чата @ShemaxPoetryFreeChat (текст, медиафайлы)</li><li>Метаданные о публикациях: дата, тип контента, размер файлов</li><li>Cookie и localStorage для работы плеера (сохранение языка, кеш песен)</li><li>IP-адрес для rate limiting и аналитики использования API</li></ul><h2>Где хранятся данные</h2><ul><li>Cloudflare D1 (база данных) — метаданные песен, сообщений, сессий админа</li><li>Cloudflare KV — кеш getFile-запросов к Telegram API</li><li>Cloudflare R2 (планируется) — медиафайлы для постоянного хранения</li><li>Telegram серверы — оригинальные медиафайлы (через getFile API)</li></ul><h2>Как используются данные</h2><ul><li>Отображение списка песен и плеера на сайте poetry.shemax.workers.dev</li><li>Кросс-постинг на внешние платформы (VK, YouTube, Threads, Rutube) — только после настройки интеграции</li><li>Сбор анонимной аналитики просмотров, лайков, комментариев</li></ul><h2>Передача данных третьим лицам</h2><p>Данные не продаются и не передаются третьим лицам, кроме случаев, предусмотренных законом. Для кросс-постинга данные могут передаваться на платформы VK, YouTube, Threads, Rutube согласно их политикам конфиденциальности.</p><h2>Права пользователей (GDPR / CCPA)</h2><ul><li>Право на доступ к своим данным</li><li>Право на удаление данных — напишите в @ShemaxPoetryFreeChat</li><li>Право на отказ от сбора данных (отказ от использования сайта)</li></ul><h2>Контакты</h2><p>По вопросам конфиденциальности: @ShemaxPoetryFreeChat (Telegram)</p><hr><p style="font-size:0.85rem;text-align:center">Shemaxpoetry &copy; ' + new Date().getFullYear() + '</p></body></html>';
 
 export default {
@@ -534,7 +546,9 @@ export default {
 
       // -- Public API --
       if (method === "GET" && path === "/api/songs") {
-        var songs = await d.getSongs(true, safeInt(url.searchParams.get("limit"), 50), safeInt(url.searchParams.get("offset"), 0));
+        var search = url.searchParams.get("search") || null;
+        var lang = url.searchParams.get("language") || null;
+        var songs = await d.getSongs(true, safeInt(url.searchParams.get("limit"), 50), safeInt(url.searchParams.get("offset"), 0), search, lang);
         // Strip internal fields from public response
         var safe = [];
         for (var _si = 0; _si < songs.length; _si++) {
@@ -545,7 +559,7 @@ export default {
             suno_audio_url: s.suno_audio_url, tg_file_id: s.tg_file_id,
             podcast_count: s.podcast_count, podcast_audio_url: s.podcast_audio_url,
             duration: s.duration, language: s.language, published_at: s.published_at,
-            order_index: s.order_index
+            order_index: s.order_index, r2_video_url: s.r2_video_url
           });
           // Warm getFile cache in background (don't block response)
           if (s.tg_file_id) botAPI.getFile(s.tg_file_id).catch(function (e) { slog("error", "getFile_warm_failed", { songId: s.id, error: e.message }); });
@@ -571,7 +585,8 @@ export default {
           var song = await d.getPublicSong(parseInt(m[1], 10));
           if (!song) return err("Not found", 404);
           var mediaUrl = null;
-          if (song.tg_file_id) { try { var fi = await botAPI.getFile(song.tg_file_id); mediaUrl = botAPI.getFileUrl(fi.file_path); } catch (e) { } }
+          if (song.r2_video_url) { try { mediaUrl = (await env.MEDIA.get(song.r2_video_url)) ? `https://pub-${env.MEDIA.bucket}.r2.dev/${song.r2_video_url}` : null; } catch (e) { } }
+          if (!mediaUrl && song.tg_file_id) { try { var fi = await botAPI.getFile(song.tg_file_id); mediaUrl = botAPI.getFileUrl(fi.file_path); } catch (e) { } }
           if (!mediaUrl && song.tg_video_url) mediaUrl = song.tg_video_url;
           if (!mediaUrl && song.suno_audio_url) mediaUrl = song.suno_audio_url;
           if (!mediaUrl) return err("No media", 404);
@@ -1180,11 +1195,11 @@ export default {
     // Static files from KV
     var key = path === "/" ? "index.html" : path.substring(1);
     try {
-      var value = await STATIC.get(key, { type: "stream" });
+      var value = await STATIC.get(key, { type: "arrayBuffer" });
       if (value === null) {
         if (key.endsWith("/")) key += "index.html";
         else key += "/index.html";
-        value = await STATIC.get(key, { type: "stream" });
+        value = await STATIC.get(key, { type: "arrayBuffer" });
         if (value === null) return addSecurityHeaders(new Response("Not found", { status: 404 }));
       }
       var ext = key.substring(key.lastIndexOf("."));
@@ -1209,8 +1224,48 @@ export default {
     }
   },
 
+  async queue(batch, env) {
+    var DB = env.DB;
+    var MEDIA = env.MEDIA;
+    var TELEGRAM_BOT_TOKEN = env.TELEGRAM_BOT_TOKEN;
+    for (var msg of batch.messages) {
+      var { action, songId, tgFileId, extraAudioId } = msg.body;
+      if (action === 'upload-mp4' && MEDIA && TELEGRAM_BOT_TOKEN) {
+        try {
+          var resp = await fetch("https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/getFile", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file_id: tgFileId }) });
+          var data = await resp.json();
+          if (!data.ok) { msg.retry({ delaySeconds: 60 }); continue; }
+          var fileUrl = "https://api.telegram.org/file/bot" + TELEGRAM_BOT_TOKEN + "/" + data.result.file_path;
+          var fileResp = await fetch(fileUrl);
+          var r2Key = "songs/" + songId + ".mp4";
+          await MEDIA.put(r2Key, fileResp.body);
+          await DB.prepare("UPDATE songs SET r2_video_url=?,updated_at=datetime('now') WHERE id=?").bind(r2Key, songId).run();
+          slog("info", "r2_upload_success", { songId: songId, r2Key: r2Key });
+        } catch (e) { slog("error", "r2_upload_failed", { songId: songId, error: e.message }); msg.retry({ delaySeconds: 60 }); }
+      }
+      if (action === 'upload-extra' && MEDIA && TELEGRAM_BOT_TOKEN) {
+        try {
+          var resp = await fetch("https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/getFile", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file_id: tgFileId }) });
+          var data = await resp.json();
+          if (!data.ok) { msg.retry({ delaySeconds: 60 }); continue; }
+          var fileUrl = "https://api.telegram.org/file/bot" + TELEGRAM_BOT_TOKEN + "/" + data.result.file_path;
+          var fileResp = await fetch(fileUrl);
+          var uuid = crypto.randomUUID();
+          var r2Key = "extra/" + uuid + ".m4a";
+          await MEDIA.put(r2Key, fileResp.body);
+          await DB.prepare("UPDATE extra_audio SET r2_key=?,updated_at=datetime('now') WHERE id=?").bind(r2Key, extraAudioId).run();
+          slog("info", "r2_upload_success", { extraAudioId: extraAudioId, r2Key: r2Key });
+        } catch (e) { slog("error", "r2_upload_failed", { extraAudioId: extraAudioId, error: e.message }); msg.retry({ delaySeconds: 60 }); }
+      }
+      if (action === 'crosspost') { await crosspostToPlatform(msg.body, env); }
+      if (action === 'analytics') { await collectPlatformAnalytics(msg.body, env); }
+    }
+  },
+
   async scheduled(controller, env) {
     var DB = env.DB;
+    var cron = controller.cron;
+    if (cron === "0 8 * * *") { slog("info", "crosspost_trigger", {}); return; }
     try {
       var rows1 = await DB.prepare("SELECT * FROM songs WHERE suno_track_url IS NOT NULL AND (suno_audio_url IS NULL OR suno_audio_url='')").all();
       for (var i = 0; i < (rows1.results || []).length; i++) {

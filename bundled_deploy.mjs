@@ -1195,11 +1195,11 @@ export default {
     // Static files from KV
     var key = path === "/" ? "index.html" : path.substring(1);
     try {
-      var value = await STATIC.get(key, { type: "arrayBuffer" });
+      var value = await STATIC.get(key, { type: "stream" });
       if (value === null) {
         if (key.endsWith("/")) key += "index.html";
         else key += "/index.html";
-        value = await STATIC.get(key, { type: "arrayBuffer" });
+        value = await STATIC.get(key, { type: "stream" });
         if (value === null) return addSecurityHeaders(new Response("Not found", { status: 404 }));
       }
       var ext = key.substring(key.lastIndexOf("."));

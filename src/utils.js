@@ -128,7 +128,17 @@ export function sunoExtractUrls(text) {
 var sunoFetchCache = new Map();
 var SUNO_CACHE_TTL = 3600000;
 
-export async function sunoFetch(url) {
+export async function sunoFetch(url, kv) {
+  var cacheKey = "suno:" + url;
+  if (kv) {
+    try {
+      var kvRaw = await kv.get(cacheKey, { type: "text" });
+      if (kvRaw) {
+        var kvData = JSON.parse(kvRaw);
+        if (Date.now() - kvData.ts < 86400000) return kvData.data;
+      }
+    } catch (e) {}
+  }
   var cached = sunoFetchCache.get(url);
   if (cached && Date.now() - cached.ts < SUNO_CACHE_TTL) return cached.data;
   var resp = await fetch("https://opensuno.vercel.app/track?url=" + encodeURIComponent(url));
@@ -142,7 +152,13 @@ export async function sunoFetch(url) {
     duration: data.data.duration || null,
     trackUrl: url,
   };
-  sunoFetchCache.set(url, { ts: Date.now(), data: result });
+  var cacheEntry = { ts: Date.now(), data: result };
+  sunoFetchCache.set(url, cacheEntry);
+  if (kv) {
+    try {
+      await kv.put(cacheKey, JSON.stringify(cacheEntry), { expirationTtl: 86400 });
+    } catch (e) {}
+  }
   return result;
 }
 

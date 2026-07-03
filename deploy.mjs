@@ -7,9 +7,9 @@ for (const m of MODULES) {
   SCRIPTS[m] = readFileSync(m, 'utf8');
 }
 const TOTAL_KB = Object.values(SCRIPTS).reduce((s, c) => s + c.length, 0) / 1024;
-const ACCOUNT_ID = 'a3aa2b215031e097488bb52593789c18';
+const ACCOUNT_ID = '02a5ee785952a4e4b7b6da209e10c53d';
 const SCRIPT_NAME = 'poetry';
-const D1_ID = 'c139e4fb-afee-4752-978e-f323bbec4aa7';
+const D1_ID = '9f979733-d291-4e4a-af29-7cb463ca534a';
 const KV_ID = 'fd50e45d91a6485b944e69056960dccd';
 const TOKEN = process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN;
 
@@ -65,7 +65,7 @@ async function uploadStatic(dir, prefix) {
 
 // 1. Deploy worker script (all modules)
 const metadata = JSON.stringify({
-  main_module: 'worker.js',
+  main_module: 'bundled_deploy.mjs',
   bindings: [
     { name: 'DB', type: 'd1', id: D1_ID },
     { name: 'STATIC', type: 'kv_namespace', namespace_id: KV_ID },

@@ -128,7 +128,17 @@ function sunoExtractUrls(text) {
 var sunoFetchCache = new Map();
 var SUNO_CACHE_TTL = 3600000;
 
-async function sunoFetch(url) {
+async function sunoFetch(url, kv) {
+  var cacheKey = "suno:" + url;
+  if (kv) {
+    try {
+      var kvRaw = await kv.get(cacheKey, { type: "text" });
+      if (kvRaw) {
+        var kvData = JSON.parse(kvRaw);
+        if (Date.now() - kvData.ts < 86400000) return kvData.data;
+      }
+    } catch (e) {}
+  }
   var cached = sunoFetchCache.get(url);
   if (cached && Date.now() - cached.ts < SUNO_CACHE_TTL) return cached.data;
   var resp = await fetch("https://opensuno.vercel.app/track?url=" + encodeURIComponent(url));
@@ -142,7 +152,13 @@ async function sunoFetch(url) {
     duration: data.data.duration || null,
     trackUrl: url,
   };
-  sunoFetchCache.set(url, { ts: Date.now(), data: result });
+  var cacheEntry = { ts: Date.now(), data: result };
+  sunoFetchCache.set(url, cacheEntry);
+  if (kv) {
+    try {
+      await kv.put(cacheKey, JSON.stringify(cacheEntry), { expirationTtl: 86400 });
+    } catch (e) {}
+  }
   return result;
 }
 
@@ -586,8 +602,8 @@ export default {
           if (!song) return err("Not found", 404);
           var mediaUrl = null;
           if (song.r2_video_url) { try { mediaUrl = (await env.MEDIA.get(song.r2_video_url)) ? `https://pub-${env.MEDIA.bucket}.r2.dev/${song.r2_video_url}` : null; } catch (e) { } }
-          if (!mediaUrl && song.tg_file_id) { try { var fi = await botAPI.getFile(song.tg_file_id); mediaUrl = botAPI.getFileUrl(fi.file_path); } catch (e) { } }
           if (!mediaUrl && song.tg_video_url) mediaUrl = song.tg_video_url;
+          if (!mediaUrl && song.tg_file_id) { try { var fi = await botAPI.getFile(song.tg_file_id); mediaUrl = botAPI.getFileUrl(fi.file_path); } catch (e) { } }
           if (!mediaUrl && song.suno_audio_url) mediaUrl = song.suno_audio_url;
           if (!mediaUrl) return err("No media", 404);
           var resp = new Response(null, { status: 302, headers: { "Location": mediaUrl, "Access-Control-Allow-Origin": "*", "Cache-Control": "no-cache" } });
@@ -889,7 +905,7 @@ export default {
             var body = await safeJSON(request);
             if (!body) return err("Invalid JSON", 400);
             if (!body.url || typeof body.url !== "string" || body.url.length > 500) return err("Invalid url", 400);
-            var info = await sunoFetch(body.url);
+            var info = await sunoFetch(body.url, STATIC);
             return secureJSON({ ok: true, data: { title: info.title, coverUrl: info.coverUrl, audioUrl: info.audioUrl, duration: info.duration } });
           } catch (e) { return err("Suno error"); }
         }
@@ -901,7 +917,7 @@ export default {
             for (var i = 0; i < (rows1.results || []).length; i++) {
               var song = rows1.results[i]; checked++;
               try {
-                var info = await sunoFetch(song.suno_track_url);
+                var info = await sunoFetch(song.suno_track_url, STATIC);
                 if (info && info.audioUrl) {
                   await DB.prepare("UPDATE songs SET suno_audio_url=?,suno_cover_url=?,title=COALESCE(NULLIF(title,'Untitled'),?),updated_at=datetime('now') WHERE id=?").bind(info.audioUrl, info.coverUrl, info.title, song.id).run();
                   updated++;
@@ -915,7 +931,7 @@ export default {
               for (var j = 0; j < urls.length; j++) {
                 try {
                   if (song.suno_track_url && song.suno_track_url !== urls[j]) continue;
-                  var info = await sunoFetch(urls[j]);
+                  var info = await sunoFetch(urls[j], STATIC);
                   if (info && info.audioUrl) {
                     await DB.prepare("UPDATE songs SET suno_audio_url=?,suno_cover_url=?,suno_track_url=?,title=COALESCE(NULLIF(title,'Untitled'),?),updated_at=datetime('now') WHERE id=?").bind(info.audioUrl, info.coverUrl, urls[j], info.title, song.id).run();
                     updated++;
@@ -1097,7 +1113,7 @@ export default {
                 if (urls.length) {
                   for (var j = 0; j < urls.length; j++) {
                     try {
-                      var info = await sunoFetch(urls[j]);
+                      var info = await sunoFetch(urls[j], STATIC);
                       if (info && info.audioUrl) {
                         await DB.prepare("UPDATE songs SET suno_audio_url=?,suno_cover_url=?,suno_track_url=?,cover_url=COALESCE(?,cover_url),title=? WHERE id=?").bind(info.audioUrl, info.coverUrl, urls[j], info.coverUrl, info.title, song.id).run();
                         found++;
@@ -1192,6 +1208,42 @@ export default {
       return htmlResponse(PRIVACY_HTML);
     }
 
+    // Terms of Service
+    if (path === "/terms") {
+      var terms = '<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Пользовательское соглашение — Shemaxpoetry</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0d0d14;color:#e8e6e3;max-width:720px;margin:0 auto;padding:40px 20px;line-height:1.7}h1{font-family:Georgia,serif;font-weight:400;font-size:1.8rem}h2{font-family:Georgia,serif;font-weight:400;font-size:1.3rem;margin-top:32px;color:#d4a853}p{margin:12px 0;color:#a8a6a3}a{color:#d4a853;text-decoration:none}ul{color:#a8a6a3;padding-left:20px}li{margin:6px 0}hr{border:none;border-top:1px solid rgba(255,255,255,0.06);margin:32px 0}</style></head><body><h1>Пользовательское соглашение</h1><p>Используя сайт poetry.shemax.workers.dev, вы соглашаетесь с условиями настоящего соглашения.</p><hr><h2>1. Общие положения</h2><p>Сайт Shemaxpoetry (далее — Сервис) является личным поэтическим проектом. Использование Сервиса регулируется настоящим соглашением.</p><h2>2. Описание сервиса</h2><p>Сервис предоставляет доступ к аудио- и видеозаписям поэтических произведений, а также сопутствующему контенту. Весь контент распространяется бесплатно.</p><h2>3. Права и обязанности пользователя</h2><ul><li>Использовать Сервис только в законных целях</li><li>Не распространять контент Сервиса с целью извлечения прибыли</li><li>Не пытаться нарушить работу Сервиса или получить несанкционированный доступ</li></ul><h2>4. Права и обязанности администрации</h2><ul><li>Администрация оставляет за собой право изменять или прекращать работу Сервиса без предварительного уведомления</li><li>Администрация не несёт ответственности за временную недоступность Сервиса</li></ul><h2>5. Интеллектуальная собственность</h2><p>Все авторские права на контент, опубликованный на Сервисе, принадлежат их автору — Osintsev (Shemax). Использование контента без разрешения автора не допускается.</p><h2>6. Применимое право</h2><p>Настоящее соглашение регулируется законодательством Российской Федерации.</p><p style="margin-top:32px"><a href="/privacy">Политика конфиденциальности</a> | <a href="/dmca">DMCA / Copyright</a></p></body></html>';
+      return htmlResponse(terms);
+    }
+
+    // DMCA / Copyright
+    if (path === "/dmca") {
+      var dmca = '<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>DMCA / Copyright — Shemaxpoetry</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0d0d14;color:#e8e6e3;max-width:720px;margin:0 auto;padding:40px 20px;line-height:1.7}h1{font-family:Georgia,serif;font-weight:400;font-size:1.8rem}h2{font-family:Georgia,serif;font-weight:400;font-size:1.3rem;margin-top:32px;color:#d4a853}p{margin:12px 0;color:#a8a6a3}a{color:#d4a853;text-decoration:none}ul{color:#a8a6a3;padding-left:20px}li{margin:6px 0}hr{border:none;border-top:1px solid rgba(255,255,255,0.06);margin:32px 0}</style></head><body><h1>DMCA / Copyright</h1><p>Последнее обновление: ' + new Date().toISOString().split("T")[0] + '</p><hr><h2>Авторские права</h2><p>Весь контент на сайте poetry.shemax.workers.dev, включая аудио- и видеозаписи, тексты песен, изображения, является интеллектуальной собственностью Osintsev (Shemax) и защищён законодательством об авторском праве.</p><h2>Сообщение о нарушении</h2><p>Если вы считаете, что ваш материал размещён на сайте с нарушением авторских прав, пожалуйста, свяжитесь с нами по указанным ниже контактам.</p><h2>Требования к жалобе</h2><ul><li>Идентификация произведения, право на которое нарушено</li><li>Идентификация материала на сайте, который нарушает право</li><li>Ваши контактные данные для связи</li><li>Подтверждение вашего добросовестного убеждения в наличии нарушения</li></ul><h2>Контакты</h2><p>Telegram: <a href="https://t.me/shemaxpoetry">@shemaxpoetry</a></p><p style="margin-top:32px"><a href="/privacy">Политика конфиденциальности</a> | <a href="/terms">Пользовательское соглашение</a></p></body></html>';
+      return htmlResponse(dmca);
+    }
+
+    // Robots
+    if (path === "/robots.txt") {
+      return new Response("User-agent: *\nAllow: /\nSitemap: https://poetry.shemax.workers.dev/sitemap.xml\n", { headers: { "Content-Type": "text/plain" } });
+    }
+
+    // Sitemap
+    if (path === "/sitemap.xml") {
+      try {
+        var urls = ["https://poetry.shemax.workers.dev/",
+          "https://poetry.shemax.workers.dev/privacy",
+          "https://poetry.shemax.workers.dev/terms",
+          "https://poetry.shemax.workers.dev/dmca"];
+        var xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"https://www.sitemaps.org/schemas/sitemap/0.9\">\n";
+        for (var si = 0; si < urls.length; si++) {
+          xml += "  <url><loc>" + urls[si] + "</loc><changefreq>weekly</changefreq><priority>" + (si === 0 ? "1.0" : "0.5") + "</priority></url>\n";
+        }
+        xml += "</urlset>";
+        return new Response(xml, { headers: { "Content-Type": "application/xml" } });
+      } catch (e) {
+        slog("error", "sitemap_error", { error: e.message, requestId: requestId });
+        return new Response("<?xml version=\"1.0\" encoding=\"UTF-8\"?><urlset xmlns=\"https://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://poetry.shemax.workers.dev/</loc></url></urlset>", { headers: { "Content-Type": "application/xml" } });
+      }
+    }
+
     // Static files from KV
     var key = path === "/" ? "index.html" : path.substring(1);
     try {
@@ -1264,6 +1316,7 @@ export default {
 
   async scheduled(controller, env) {
     var DB = env.DB;
+    var STATIC = env.STATIC;
     var cron = controller.cron;
     if (cron === "0 8 * * *") { slog("info", "crosspost_trigger", {}); return; }
     try {
@@ -1271,7 +1324,7 @@ export default {
       for (var i = 0; i < (rows1.results || []).length; i++) {
         var song = rows1.results[i];
         try {
-          var info = await sunoFetch(song.suno_track_url);
+          var info = await sunoFetch(song.suno_track_url, STATIC);
           if (info && info.audioUrl) {
             await DB.prepare("UPDATE songs SET suno_audio_url=?,suno_cover_url=?,title=COALESCE(NULLIF(title,'Untitled'),?),updated_at=datetime('now') WHERE id=?").bind(info.audioUrl, info.coverUrl, info.title, song.id).run();
           }
@@ -1284,7 +1337,7 @@ export default {
         for (var j = 0; j < urls.length; j++) {
           try {
             if (song.suno_track_url && song.suno_track_url !== urls[j]) continue;
-            var info = await sunoFetch(urls[j]);
+            var info = await sunoFetch(urls[j], STATIC);
             if (info && info.audioUrl) {
               await DB.prepare("UPDATE songs SET suno_audio_url=?,suno_cover_url=?,suno_track_url=?,title=COALESCE(NULLIF(title,'Untitled'),?),updated_at=datetime('now') WHERE id=?").bind(info.audioUrl, info.coverUrl, urls[j], info.title, song.id).run();
               break;

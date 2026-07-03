@@ -3,16 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>Shemaxpoetry</title>
+<title>Shemaxpoetry — поэтический проект</title>
+<meta name="description" content="Поэтический проект Shemaxpoetry. Оригинальные стихи, аудио- и видеозаписи. Автор — Osintsev (Shemax).">
+<meta name="keywords" content="поэзия, стихи, shemaxpoetry, аудиостихи, поэтический проект">
+<meta name="author" content="Osintsev (Shemax)">
+<meta property="og:title" content="Shemaxpoetry — поэтический проект">
+<meta property="og:description" content="Оригинальные стихи, аудио- и видеозаписи поэтического проекта Shemaxpoetry">
+<meta property="og:image" content="https://poetry.shemax.workers.dev/img/logo.png">
+<meta property="og:url" content="https://poetry.shemax.workers.dev">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Shemaxpoetry — поэтический проект">
+<meta name="twitter:description" content="Оригинальные стихи, аудио- и видеозаписи поэтического проекта Shemaxpoetry">
+<meta name="twitter:image" content="https://poetry.shemax.workers.dev/img/logo.png">
 <link rel="icon" href="/img/favicon.ico" sizes="32x32">
 <link rel="preconnect" href="https://api.telegram.org">
 <link rel="preconnect" href="https://cdn2.suno.ai">
 <link rel="preconnect" href="https://poetry.shemax.workers.dev">
+<link rel="canonical" href="https://poetry.shemax.workers.dev">
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+<a href="#appContainer" class="skip-link" tabindex="1">Перейти к контенту</a>
 
-<div class="app-container" id="appContainer">
+<div class="app-container" id="appContainer" role="main">
   <!-- Desktop side screens -->
   <div class="side-screen left" id="leftScreen" onclick="playLeft()">
     <div class="side-cover" id="leftCover"><img src="/img/logo.png" class="side-placeholder-img" alt=""></div>
@@ -33,13 +47,13 @@
           </button>
         </div>
         <div class="main-center">
-          <button class="main-play-btn" id="mainPlayBtn">▶</button>
+          <button class="main-play-btn" id="mainPlayBtn" aria-label="Play/Pause">▶</button>
           <div class="loading-indicator hidden" id="loadingIndicator"><span></span><span></span><span></span></div>
         </div>
-        <div class="podcast-btn" id="podcastBtn" onclick="togglePodcast()" style="display:none">
+        <div class="podcast-btn" id="podcastBtn" onclick="togglePodcast()" style="display:none" role="button" tabindex="0" aria-label="Podcast">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
         </div>
-        <div class="podcast-btn" id="linksBtn" onclick="toggleLinks()" style="display:none">
+        <div class="podcast-btn" id="linksBtn" onclick="toggleLinks()" style="display:none" role="button" tabindex="0" aria-label="External links">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
         </div>
         <div class="main-bottom" id="mainBottom">
@@ -67,7 +81,7 @@
           </div>
           <div class="menu-panel" id="menuSongs">
             <div class="menu-search-row">
-              <input class="menu-search" id="menuSearch" type="text" placeholder="" data-i18n-placeholder="searchPlaceholder">
+              <input class="menu-search" id="menuSearch" type="text" placeholder="" data-i18n-placeholder="searchPlaceholder" aria-label="Search songs">
               <div class="lang-filter" id="langFilter">
                 <button class="lang-btn active" data-lang=""><span data-i18n="allLanguages">Все</span></button>
                 <button class="lang-btn" data-lang="ru">RU</button>
@@ -81,6 +95,7 @@
               <h3 class="about-title" data-i18n="aboutTitle">О проекте</h3>
               <p class="about-text" data-i18n="aboutText">Поэтический проект Shemaxpoetry</p>
               <p style="margin-top:16px;font-size:0.85rem"><a href="/privacy" style="color:var(--accent);text-decoration:none" data-i18n="privacy">Политика конфиденциальности</a></p>
+              <p style="font-size:0.85rem;margin-top:4px"><a href="/terms" style="color:var(--accent);text-decoration:none">Пользовательское соглашение</a> · <a href="/dmca" style="color:var(--accent);text-decoration:none">DMCA</a></p>
             </div>
           </div>
         </div>

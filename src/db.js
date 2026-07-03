@@ -3,11 +3,14 @@ var EXTRA_AUDIO_COUNT_SUBQUERY = "(SELECT COUNT(*) FROM extra_audio WHERE song_i
 
 export function db(e) {
   return {
-    async getSongs(v, l, o) {
+    async getSongs(v, l, o, search, lang) {
       l = l || 50; o = o || 0;
       var q = "SELECT s.*," + EXTRA_AUDIO_COUNT_SUBQUERY + " as podcast_count," + EXTRA_AUDIO_SUBQUERY + " as podcast_audio_url FROM songs s";
-      var p = [];
-      if (v) q += " WHERE s.visible=1";
+      var p = [], wheres = [];
+      if (v) wheres.push("s.visible=1");
+      if (search) { wheres.push("(s.title LIKE ? OR s.lyrics LIKE ?)"); p.push("%" + search + "%", "%" + search + "%"); }
+      if (lang) { wheres.push("s.language=?"); p.push(lang); }
+      if (wheres.length) q += " WHERE " + wheres.join(" AND ");
       q += " ORDER BY s.order_index ASC,s.id DESC LIMIT ? OFFSET ?";
       p.push(l, o);
       return (await e.prepare(q).bind(...p).all()).results || [];

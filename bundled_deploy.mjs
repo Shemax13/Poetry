@@ -1208,18 +1208,23 @@ export default {
       return err("Not found", 404);
     }
 
+    // DEBUG: show path
+    if (path === "/debug-path") {
+      return new Response(JSON.stringify({ path: path, pathlen: path.length, pathBytes: Array.from(new TextEncoder().encode(path)).join(",") }), { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } });
+    }
+
     // Privacy policy
     if (path === "/privacy") {
       return htmlResponse(PRIVACY_HTML);
     }
 
     // Terms of Service
-    if (path === "/terms") {
+    if (path === "/terms" || path === "/terms/") {
       return htmlResponse(TERMS_HTML);
     }
 
     // DMCA / Copyright
-    if (path === "/dmca") {
+    if (path === "/dmca" || path === "/dmca/") {
       return htmlResponse(DMCA_HTML);
     }
 

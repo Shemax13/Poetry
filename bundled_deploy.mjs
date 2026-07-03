@@ -550,6 +550,10 @@ export default {
 
     if (method === "OPTIONS") return new Response(null, { headers: path.startsWith("/api/admin/") ? corsRestricted : cors });
 
+    if (path === "/_test") {
+      return new Response(JSON.stringify({ path: path, pathlen: path.length, pathBytes: Array.from(new TextEncoder().encode(path)).join(","), routeHit: true }), { headers: { "Content-Type": "application/json" } });
+    }
+
     if (path.startsWith("/api/")) {
       var d = db(DB);
       var botAPI = tg(TELEGRAM_BOT_TOKEN, STATIC);

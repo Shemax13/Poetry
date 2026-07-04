@@ -550,11 +550,6 @@ export default {
 
     if (method === "OPTIONS") return new Response(null, { headers: path.startsWith("/api/admin/") ? corsRestricted : cors });
 
-    if (path === "/_test" || path === "/_debug") {
-      var _dbg = { path: path, url: request.url, method: request.method, routeHit: true };
-      return new Response("_test:" + path + "|url:" + request.url, { headers: { "Content-Type": "text/plain" } });
-    }
-
     if (path.startsWith("/api/")) {
       var d = db(DB);
       var botAPI = tg(TELEGRAM_BOT_TOKEN, STATIC);
@@ -1216,6 +1211,10 @@ export default {
     // DEBUG: show path
     if (path === "/debug-path") {
       return new Response(JSON.stringify({ path: path, pathlen: path.length, pathBytes: Array.from(new TextEncoder().encode(path)).join(",") }), { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } });
+    }
+
+    if (path === "/_test" || path === "/_debug") {
+      return new Response("_test:" + path + "|url:" + request.url, { headers: { "Content-Type": "text/plain" } });
     }
 
     // Privacy policy

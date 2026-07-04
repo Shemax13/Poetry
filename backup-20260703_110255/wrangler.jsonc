@@ -1,0 +1,25 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "poetry",
+  "main": "bundled_deploy.mjs",
+  "compatibility_date": "2026-06-17",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "SHEMAX_DB",
+      "database_id": "c139e4fb-afee-4752-978e-f323bbec4aa7"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "STATIC",
+      "id": "67c625a1b9014853b895f8dfc726b1fa"
+    }
+  ],
+
+  "workers_dev": true,
+  "triggers": {
+    "crons": ["0 6 * * *", "0 8 * * *"]
+  }
+}

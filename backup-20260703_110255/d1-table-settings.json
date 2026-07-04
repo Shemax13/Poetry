@@ -1,0 +1,44 @@
+[
+  {
+    "results": [
+      {
+        "key": "about_text_en",
+        "value": "Shemaxpoetry poetic project"
+      },
+      {
+        "key": "about_text_ru",
+        "value": "Поэтический проект Shemaxpoetry"
+      },
+      {
+        "key": "last_sync_at",
+        "value": ""
+      },
+      {
+        "key": "site_language",
+        "value": "ru"
+      },
+      {
+        "key": "songs_per_page",
+        "value": "20"
+      }
+    ],
+    "success": true,
+    "meta": {
+      "served_by": "v3-prod",
+      "served_by_region": "EEUR",
+      "served_by_colo": "ARN",
+      "served_by_primary": true,
+      "timings": {
+        "sql_duration_ms": 0.6521
+      },
+      "duration": 0.6521,
+      "changes": 0,
+      "last_row_id": 0,
+      "changed_db": false,
+      "size_after": 1208320,
+      "rows_read": 5,
+      "rows_written": 0,
+      "total_attempts": 1
+    }
+  }
+]

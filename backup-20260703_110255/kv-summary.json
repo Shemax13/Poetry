@@ -1,0 +1,137 @@
+[
+  {
+    "name": "_test2",
+    "size": 10240,
+    "type": "text"
+  },
+  {
+    "name": "_test3",
+    "size": 24576,
+    "type": "text"
+  },
+  {
+    "name": "_test4",
+    "size": 20480,
+    "type": "text"
+  },
+  {
+    "name": "_test5",
+    "size": 22528,
+    "type": "text"
+  },
+  {
+    "name": "_test6",
+    "size": 21504,
+    "type": "text"
+  },
+  {
+    "name": "_test7",
+    "size": 22528,
+    "type": "text"
+  },
+  {
+    "name": "_test8",
+    "size": 22528,
+    "type": "text"
+  },
+  {
+    "name": "_test9",
+    "size": 21504,
+    "type": "text"
+  },
+  {
+    "name": "admin/index.html",
+    "size": 19498,
+    "type": "text"
+  },
+  {
+    "name": "css/style.css",
+    "size": 14137,
+    "type": "text"
+  },
+  {
+    "name": "img/favicon.ico",
+    "size": 2527,
+    "type": "binary (2527 bytes)"
+  },
+  {
+    "name": "img/logo.png",
+    "size": 253,
+    "type": "text"
+  },
+  {
+    "name": "index.html",
+    "size": 5748,
+    "type": "text"
+  },
+  {
+    "name": "js/admin.js",
+    "size": 19310,
+    "type": "text"
+  },
+  {
+    "name": "js/app.js",
+    "size": 18659,
+    "type": "text"
+  },
+  {
+    "name": "js/i18n.js",
+    "size": 1598,
+    "type": "text"
+  },
+  {
+    "name": "test.js",
+    "size": 21,
+    "type": "text"
+  },
+  {
+    "name": "test123",
+    "size": 5,
+    "type": "text"
+  },
+  {
+    "name": "test_1000",
+    "size": 1000,
+    "type": "text"
+  },
+  {
+    "name": "test_10000",
+    "size": 10000,
+    "type": "text"
+  },
+  {
+    "name": "test_15000",
+    "size": 15000,
+    "type": "text"
+  },
+  {
+    "name": "test_20000",
+    "size": 20000,
+    "type": "text"
+  },
+  {
+    "name": "test_22500",
+    "size": 22500,
+    "type": "text"
+  },
+  {
+    "name": "test_25000",
+    "size": 25000,
+    "type": "text"
+  },
+  {
+    "name": "test_26096",
+    "size": 253,
+    "type": "text"
+  },
+  {
+    "name": "test_5000",
+    "size": 5000,
+    "type": "text"
+  },
+  {
+    "name": "test_page.html",
+    "size": 21005,
+    "type": "text"
+  }
+]

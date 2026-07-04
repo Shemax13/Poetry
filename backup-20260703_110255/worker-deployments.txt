@@ -1,0 +1,92 @@
+
+ ⛅️ wrangler 4.105.0 (update available 4.107.0)
+───────────────────────────────────────────────
+Created:     2026-06-29T07:23:29.409Z
+Author:      shemax@mail.ru
+Source:      Upload
+Message:     Automatic deployment on upload.
+Version(s):  (100%) 0ab23ea6-85e2-4bc4-9ece-f30aa7d79abd
+                 Created:  2026-06-29T07:23:29.409Z
+                     Tag:  -
+                 Message:  -
+
+Created:     2026-06-29T07:25:24.236Z
+Author:      shemax@mail.ru
+Source:      Upload
+Message:     Automatic deployment on upload.
+Version(s):  (100%) 2b475c5a-d9fe-4375-89ea-945f7b16f379
+                 Created:  2026-06-29T07:25:24.236Z
+                     Tag:  -
+                 Message:  -
+
+Created:     2026-06-29T07:25:57.575Z
+Author:      shemax@mail.ru
+Source:      Upload
+Message:     Automatic deployment on upload.
+Version(s):  (100%) 4b60b1a0-4459-4c30-a245-a287b65ec39f
+                 Created:  2026-06-29T07:25:57.575Z
+                     Tag:  -
+                 Message:  -
+
+Created:     2026-06-29T07:36:58.048Z
+Author:      shemax@mail.ru
+Source:      Upload
+Message:     Automatic deployment on upload.
+Version(s):  (100%) 3c38d377-bbae-466e-91ef-a77f1dd4d035
+                 Created:  2026-06-29T07:36:58.048Z
+                     Tag:  -
+                 Message:  -
+
+Created:     2026-06-29T07:37:34.905Z
+Author:      shemax@mail.ru
+Source:      Upload
+Message:     Automatic deployment on upload.
+Version(s):  (100%) 4f432b5a-bb32-4663-b970-9c91adb88014
+                 Created:  2026-06-29T07:37:34.905Z
+                     Tag:  -
+                 Message:  -
+
+Created:     2026-06-29T07:39:59.780Z
+Author:      shemax@mail.ru
+Source:      Upload
+Message:     Automatic deployment on upload.
+Version(s):  (100%) fc747cf1-c10e-4c24-bdfe-c30a0fec069a
+                 Created:  2026-06-29T07:39:59.780Z
+                     Tag:  -
+                 Message:  -
+
+Created:     2026-06-29T07:40:18.500Z
+Author:      shemax@mail.ru
+Source:      Upload
+Message:     Automatic deployment on upload.
+Version(s):  (100%) e82b2936-c661-4c23-b0c8-78b2e573badf
+                 Created:  2026-06-29T07:40:18.500Z
+                     Tag:  -
+                 Message:  -
+
+Created:     2026-06-29T07:44:25.823Z
+Author:      shemax@mail.ru
+Source:      Upload
+Message:     Automatic deployment on upload.
+Version(s):  (100%) 4e8253d4-b234-46e2-98c5-8ad81136164d
+                 Created:  2026-06-29T07:44:25.823Z
+                     Tag:  -
+                 Message:  -
+
+Created:     2026-06-29T07:44:33.373Z
+Author:      shemax@mail.ru
+Source:      Upload
+Message:     Automatic deployment on upload.
+Version(s):  (100%) a0beef1f-8e15-41cb-879f-6d1dabf44e92
+                 Created:  2026-06-29T07:44:33.373Z
+                     Tag:  -
+                 Message:  -
+
+Created:     2026-07-03T08:46:50.029Z
+Author:      shemax@mail.ru
+Source:      Secret Change
+Message:     -
+Version(s):  (100%) 02defce6-98e6-47a3-855a-257188a86c06
+                 Created:  2026-07-03T08:46:50.029Z
+                     Tag:  -
+                 Message:  -

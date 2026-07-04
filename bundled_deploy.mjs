@@ -1247,8 +1247,8 @@ export default {
     }
 
     // ALL debug routes combined at END
-    if (path === "/_test" || path === "/_debug" || path === "/_urgent") {
-      return new Response("END:" + path + "|url:" + request.url + "|method:" + request.method, { headers: { "Content-Type": "text/plain" } });
+    if (path === "/_test" || path === "/_test2" || path === "/_debug" || path === "/_urgent") {
+      return new Response("END:" + path + "|url:" + request.url + "|method:" + request.method, { headers: { "Content-Type": "text/plain", "X-Worker-End": path } });
     }
 
     // Static files from KV

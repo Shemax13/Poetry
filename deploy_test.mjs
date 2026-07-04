@@ -12,6 +12,8 @@ if (!TOKEN) {
 const code = readFileSync('test_deploy.mjs', 'utf8');
 const metadata = JSON.stringify({
   main_module: 'test_deploy.mjs',
+  compatibility_date: '2026-06-17',
+  compatibility_flags: ['nodejs_compat'],
   bindings: [],
 });
 

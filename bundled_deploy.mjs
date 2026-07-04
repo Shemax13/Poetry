@@ -1213,10 +1213,6 @@ export default {
       return new Response(JSON.stringify({ path: path, pathlen: path.length, pathBytes: Array.from(new TextEncoder().encode(path)).join(",") }), { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } });
     }
 
-    if (path === "/_test" || path === "/_debug") {
-      return new Response("_test:" + path + "|url:" + request.url, { headers: { "Content-Type": "text/plain" } });
-    }
-
     // Privacy policy
     if (path === "/privacy") {
       return htmlResponse(PRIVACY_HTML);
@@ -1240,6 +1236,11 @@ export default {
     // Sitemap
     if (path === "/sitemap.xml") {
       return new Response(SITEMAP_XML, { headers: { "Content-Type": "application/xml" } });
+    }
+
+    // _test debug
+    if (path === "/_test" || path === "/_debug") {
+      return new Response("_test:" + path + "|url:" + request.url, { headers: { "Content-Type": "text/plain" } });
     }
 
     // Static files from KV

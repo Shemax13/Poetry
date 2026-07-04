@@ -127,6 +127,12 @@ export function sunoExtractUrls(text) {
 
 var sunoFetchCache = new Map();
 var SUNO_CACHE_TTL = 3600000;
+var SUNO_CACHE_MAX = 200;
+function cappedSet(k, v) {
+  if (sunoFetchCache.has(k)) { sunoFetchCache.set(k, v); return; }
+  if (sunoFetchCache.size >= SUNO_CACHE_MAX) { var first = sunoFetchCache.keys().next().value; sunoFetchCache.delete(first); }
+  sunoFetchCache.set(k, v);
+}
 
 export async function sunoFetch(url, kv) {
   var cacheKey = "suno:" + url;
@@ -153,7 +159,7 @@ export async function sunoFetch(url, kv) {
     trackUrl: url,
   };
   var cacheEntry = { ts: Date.now(), data: result };
-  sunoFetchCache.set(url, cacheEntry);
+  cappedSet(url, cacheEntry);
   if (kv) {
     try {
       await kv.put(cacheKey, JSON.stringify(cacheEntry), { expirationTtl: 86400 });

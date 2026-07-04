@@ -3,7 +3,7 @@ dist-functions/
 .wrangler/
 *.log
 .env
-scripts/deploy*.mjs
+deploy*.mjs
 /tmp/
 backups/
 dist/

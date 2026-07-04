@@ -37,6 +37,7 @@ export default {
     if (method === "OPTIONS") return new Response(null, { headers: path.startsWith("/api/admin/") ? corsRestricted : cors });
 
     if (path.startsWith("/api/")) {
+      try {
       var d = db(DB);
       var botAPI = tg(TELEGRAM_BOT_TOKEN, STATIC);
       slog("info", "request", { method: method, path: path, requestId: requestId });
@@ -127,7 +128,8 @@ export default {
           try { update = JSON.parse(raw); } catch (e) { return json({ ok: true }); }
           var p = parseMsgFull(update);
           if (!p || !p.tg_msg_id) return json({ ok: true });
-          if (!p.chat_type || !p.text_content || p.text_content.length > 5000) p.text_content = (p.text_content || "").substring(0, 5000);
+          if (!p.chat_type || !p.tg_msg_id) return json({ ok: true });
+          if (p.text_content && p.text_content.length > 5000) p.text_content = p.text_content.substring(0, 5000);
 
           // Dedup: skip if this exact message already stored
           var existingMsg = await d.getMessageByChatAndMsg(p.chat_id, p.tg_msg_id);
@@ -689,6 +691,10 @@ export default {
       }
 
       return err("Not found", 404);
+      } catch (e) {
+        slog("error", "api_error", { error: e.message, path: path, requestId: requestId });
+        return err("Internal error");
+      }
     }
 
     // Privacy policy

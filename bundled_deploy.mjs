@@ -550,8 +550,9 @@ export default {
 
     if (method === "OPTIONS") return new Response(null, { headers: path.startsWith("/api/admin/") ? corsRestricted : cors });
 
-    if (path === "/_test") {
-      return new Response(JSON.stringify({ path: path, pathlen: path.length, pathBytes: Array.from(new TextEncoder().encode(path)).join(","), routeHit: true }), { headers: { "Content-Type": "application/json" } });
+    if (path === "/_test" || path === "/_debug") {
+      var _dbg = { path: path, url: request.url, method: request.method, routeHit: true };
+      return new Response("_test:" + path + "|url:" + request.url, { headers: { "Content-Type": "text/plain" } });
     }
 
     if (path.startsWith("/api/")) {

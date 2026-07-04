@@ -1,5 +1,3 @@
-export default {
-  async fetch(request, env) {
-    return new Response("hello world\n");
-  }
-};
+addEventListener('fetch', event => {
+  event.respondWith(new Response("hello world\n"));
+});

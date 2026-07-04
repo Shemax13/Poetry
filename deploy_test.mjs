@@ -11,7 +11,7 @@ if (!TOKEN) {
 
 const code = readFileSync('test_deploy.mjs', 'utf8');
 const metadata = JSON.stringify({
-  main_module: 'test_deploy.mjs',
+  body_part: 'test_deploy.mjs',
   compatibility_date: '2026-06-17',
   compatibility_flags: ['nodejs_compat'],
   bindings: [],
@@ -33,7 +33,7 @@ function addPart(name, filename, contentType, data) {
 }
 
 addPart('metadata', null, 'application/json', metadata);
-addPart('test_deploy.mjs', 'test_deploy.mjs', 'application/javascript+module', code);
+addPart('test_deploy.mjs', 'test_deploy.mjs', 'application/javascript', code);
 
 totalScriptBytes.push(encode('--' + boundary + '--\r\n'));
 

@@ -549,8 +549,11 @@ export default {
     }
 
     // EARLIEST POSSIBLE CHECK - before anything else
-    if (request.url.indexOf("/_urgent") !== -1) {
-      return new Response("URGENT:" + path + "|" + request.url + "|" + method, { headers: { "Content-Type": "text/plain" } });
+    if (method === "GET" && path === "/_urgent") {
+      return new Response("URGENT:" + path + "|" + request.url + "|" + method, { headers: { "Content-Type": "text/plain", "X-Worker-Hit": "urgent", "X-Worker-Path": path, "X-Worker-URL": request.url, "X-Worker-Method": method } });
+    }
+    if (method === "GET" && path === "/_test2") {
+      return new Response("TEST:" + path + "|" + request.url, { headers: { "Content-Type": "text/plain", "X-Worker-Hit": "test2" } });
     }
 
     if (method === "OPTIONS") return new Response(null, { headers: path.startsWith("/api/admin/") ? corsRestricted : cors });

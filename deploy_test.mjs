@@ -18,21 +18,30 @@ const metadata = JSON.stringify({
 const boundary = '----FormBoundary' + Date.now();
 function encode(s) { return new TextEncoder().encode(s); }
 
-const parts = [];
 const totalScriptBytes = [];
 
 function addPart(name, filename, contentType, data) {
-  parts.push('--' + boundary);
-  parts.push('Content-Disposition: form-data; name="' + name + '"' + (filename ? '; filename="' + filename + '"' : ''));
-  parts.push('Content-Type: ' + contentType);
-  parts.push('');
-  parts.push(data);
+  const header = encode('--' + boundary + '\r\n');
+  totalScriptBytes.push(header);
+  const disp = encode('Content-Disposition: form-data; name="' + name + '"' + (filename ? '; filename="' + filename + '"' : '') + '\r\n');
+  totalScriptBytes.push(disp);
+  totalScriptBytes.push(encode('Content-Type: ' + contentType + '\r\n\r\n'));
+  totalScriptBytes.push(encode(data));
+  totalScriptBytes.push(encode('\r\n'));
 }
 
 addPart('metadata', null, 'application/json', metadata);
 addPart('test_deploy.mjs', 'test_deploy.mjs', 'application/javascript+module', code);
 
-const body = parts.join('\r\n') + '\r\n--' + boundary + '--\r\n';
+totalScriptBytes.push(encode('--' + boundary + '--\r\n'));
+
+const totalLength = totalScriptBytes.reduce((s, p) => s + p.byteLength, 0);
+const body = new Uint8Array(totalLength);
+let offset = 0;
+for (const p of totalScriptBytes) {
+  body.set(p, offset);
+  offset += p.byteLength;
+}
 
 const url = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/workers/scripts/${SCRIPT_NAME}`;
 const resp = await fetch(url, {

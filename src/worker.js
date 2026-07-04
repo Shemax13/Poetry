@@ -95,9 +95,20 @@ export default {
           if (!mediaUrl && song.tg_video_url) mediaUrl = song.tg_video_url;
           if (!mediaUrl && song.suno_audio_url) mediaUrl = song.suno_audio_url;
           if (!mediaUrl) return err("No media", 404);
-          var resp = new Response(null, { status: 302, headers: { "Location": mediaUrl, "Access-Control-Allow-Origin": "*", "Cache-Control": "no-cache" } });
-          return addSecurityHeaders(resp);
-        } catch (e) { return err("Media error"); }
+          var proxyHeaders = { "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=3600" };
+          var clientRange = request.headers.get("Range");
+          var fetchOpts = {};
+          if (clientRange) { fetchOpts.headers = { "Range": clientRange }; proxyHeaders["Accept-Ranges"] = "bytes"; }
+          var mediaResp = await fetch(mediaUrl, fetchOpts);
+          if (!mediaResp.ok && mediaResp.status !== 206) return err("Media unavailable", 502);
+          var ct = mediaResp.headers.get("Content-Type");
+          if (ct) proxyHeaders["Content-Type"] = ct;
+          var cl = mediaResp.headers.get("Content-Length");
+          if (cl) proxyHeaders["Content-Length"] = cl;
+          var cr = mediaResp.headers.get("Content-Range");
+          if (cr) proxyHeaders["Content-Range"] = cr;
+          return addSecurityHeaders(new Response(mediaResp.body, { status: mediaResp.status, headers: proxyHeaders }));
+        } catch (e) { slog("error", "media_error", { error: e.message }); return err("Media unavailable"); }
       }
 
       m = path.match(/^\/api\/tg-file-url\/(\d+)$/);
@@ -741,12 +752,12 @@ export default {
     // Static files from KV
     var key = path === "/" ? "index.html" : path.substring(1);
     try {
-      var value = await STATIC.get(key, { type: "stream" });
-      if (value === null) {
+      var buf = await STATIC.get(key, { type: "arrayBuffer" });
+      if (buf === null) {
         if (key.endsWith("/")) key += "index.html";
         else key += "/index.html";
-        value = await STATIC.get(key, { type: "stream" });
-        if (value === null) return addSecurityHeaders(new Response("Not found", { status: 404 }));
+        buf = await STATIC.get(key, { type: "arrayBuffer" });
+        if (buf === null) return addSecurityHeaders(new Response("Not found", { status: 404 }));
       }
       var ext = key.substring(key.lastIndexOf("."));
       var ct = mimeTypes[ext] || "application/octet-stream";
@@ -761,7 +772,7 @@ export default {
         "; font-src 'self';" +
         (isAdmin ? " frame-src https://challenges.cloudflare.com;" : "");
       if (!isHtml) csp = "";
-      var resp = new Response(value, { headers: { "Content-Type": ct, "Cache-Control": "no-cache, must-revalidate" } });
+      var resp = new Response(buf, { headers: { "Content-Type": ct, "Cache-Control": "no-cache, must-revalidate" } });
       if (csp) resp.headers.set("Content-Security-Policy", csp);
       return addSecurityHeaders(resp);
     } catch (e) {

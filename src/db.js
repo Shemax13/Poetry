@@ -1,11 +1,12 @@
 var EXTRA_AUDIO_SUBQUERY = "(SELECT file_url FROM extra_audio WHERE song_id=s.id AND file_type='podcast' AND visible=1 ORDER BY id ASC LIMIT 1)";
 var EXTRA_AUDIO_COUNT_SUBQUERY = "(SELECT COUNT(*) FROM extra_audio WHERE song_id=s.id AND file_type='podcast' AND visible=1)";
+var EXTRA_AUDIO_JOIN = "LEFT JOIN (SELECT song_id,COUNT(*) as p_cnt FROM extra_audio WHERE file_type='podcast' AND visible=1 GROUP BY song_id) pa ON pa.song_id=s.id LEFT JOIN (SELECT song_id,file_url,ROW_NUMBER() OVER (PARTITION BY song_id ORDER BY id ASC) as rn FROM extra_audio WHERE file_type='podcast' AND visible=1) pa2 ON pa2.song_id=s.id AND pa2.rn=1";
 
 export function db(e) {
   return {
     async getSongs(v, l, o, search, lang) {
       l = l || 50; o = o || 0;
-      var q = "SELECT s.*," + EXTRA_AUDIO_COUNT_SUBQUERY + " as podcast_count," + EXTRA_AUDIO_SUBQUERY + " as podcast_audio_url FROM songs s";
+      var q = "SELECT s.*,IFNULL(pa.p_cnt,0) as podcast_count,pa2.file_url as podcast_audio_url FROM songs s " + EXTRA_AUDIO_JOIN;
       var p = [], wheres = [];
       if (v) wheres.push("s.visible=1");
       if (search) { wheres.push("(s.title LIKE ? OR s.lyrics LIKE ?)"); p.push("%" + search + "%", "%" + search + "%"); }

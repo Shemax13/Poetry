@@ -253,12 +253,13 @@ var mimeTypes = {
 
 var EXTRA_AUDIO_SUBQUERY = "(SELECT file_url FROM extra_audio WHERE song_id=s.id AND file_type='podcast' AND visible=1 ORDER BY id ASC LIMIT 1)";
 var EXTRA_AUDIO_COUNT_SUBQUERY = "(SELECT COUNT(*) FROM extra_audio WHERE song_id=s.id AND file_type='podcast' AND visible=1)";
+var EXTRA_AUDIO_JOIN = "LEFT JOIN (SELECT song_id,COUNT(*) as p_cnt FROM extra_audio WHERE file_type='podcast' AND visible=1 GROUP BY song_id) pa ON pa.song_id=s.id LEFT JOIN (SELECT song_id,file_url,ROW_NUMBER() OVER (PARTITION BY song_id ORDER BY id ASC) as rn FROM extra_audio WHERE file_type='podcast' AND visible=1) pa2 ON pa2.song_id=s.id AND pa2.rn=1";
 
 function db(e) {
   return {
     async getSongs(v, l, o, search, lang) {
       l = l || 50; o = o || 0;
-      var q = "SELECT s.*," + EXTRA_AUDIO_COUNT_SUBQUERY + " as podcast_count," + EXTRA_AUDIO_SUBQUERY + " as podcast_audio_url FROM songs s";
+      var q = "SELECT s.*,IFNULL(pa.p_cnt,0) as podcast_count,pa2.file_url as podcast_audio_url FROM songs s " + EXTRA_AUDIO_JOIN;
       var p = [], wheres = [];
       if (v) wheres.push("s.visible=1");
       if (search) { wheres.push("(s.title LIKE ? OR s.lyrics LIKE ?)"); p.push("%" + search + "%", "%" + search + "%"); }
@@ -620,9 +621,20 @@ export default {
           if (!mediaUrl && song.tg_file_id) { try { var fi = await botAPI.getFile(song.tg_file_id); mediaUrl = botAPI.getFileUrl(fi.file_path); } catch (e) { } }
           if (!mediaUrl && song.suno_audio_url) mediaUrl = song.suno_audio_url;
           if (!mediaUrl) return err("No media", 404);
-          var resp = new Response(null, { status: 302, headers: { "Location": mediaUrl, "Access-Control-Allow-Origin": "*", "Cache-Control": "no-cache" } });
-          return addSecurityHeaders(resp);
-        } catch (e) { return err("Media error"); }
+          var proxyHeaders = { "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=3600" };
+          var clientRange = request.headers.get("Range");
+          var fetchOpts = {};
+          if (clientRange) { fetchOpts.headers = { "Range": clientRange }; proxyHeaders["Accept-Ranges"] = "bytes"; }
+          var mediaResp = await fetch(mediaUrl, fetchOpts);
+          if (!mediaResp.ok && mediaResp.status !== 206) return err("Media unavailable", 502);
+          var ct = mediaResp.headers.get("Content-Type");
+          if (ct) proxyHeaders["Content-Type"] = ct;
+          var cl = mediaResp.headers.get("Content-Length");
+          if (cl) proxyHeaders["Content-Length"] = cl;
+          var cr = mediaResp.headers.get("Content-Range");
+          if (cr) proxyHeaders["Content-Range"] = cr;
+          return addSecurityHeaders(new Response(mediaResp.body, { status: mediaResp.status, headers: proxyHeaders }));
+        } catch (e) { slog("error", "media_error", { error: e.message }); return err("Media unavailable"); }
       }
 
       m = path.match(/^\/api\/tg-file-url\/(\d+)$/);
@@ -1260,12 +1272,12 @@ export default {
     // Static files from KV
     var key = path === "/" ? "index.html" : path.substring(1);
     try {
-      var value = await STATIC.get(key, { type: "stream" });
-      if (value === null) {
+      var buf = await STATIC.get(key, { type: "arrayBuffer" });
+      if (buf === null) {
         if (key.endsWith("/")) key += "index.html";
         else key += "/index.html";
-        value = await STATIC.get(key, { type: "stream" });
-        if (value === null) return addSecurityHeaders(new Response("Not found", { status: 404 }));
+        buf = await STATIC.get(key, { type: "arrayBuffer" });
+        if (buf === null) return addSecurityHeaders(new Response("Not found", { status: 404 }));
       }
       var ext = key.substring(key.lastIndexOf("."));
       var ct = mimeTypes[ext] || "application/octet-stream";
@@ -1280,7 +1292,7 @@ export default {
         "; font-src 'self';" +
         (isAdmin ? " frame-src https://challenges.cloudflare.com;" : "");
       if (!isHtml) csp = "";
-      var resp = new Response(value, { headers: { "Content-Type": ct, "Cache-Control": "no-cache, must-revalidate" } });
+      var resp = new Response(buf, { headers: { "Content-Type": ct, "Cache-Control": "no-cache, must-revalidate" } });
       if (csp) resp.headers.set("Content-Security-Policy", csp);
       return addSecurityHeaders(resp);
     } catch (e) {

@@ -548,6 +548,11 @@ export default {
       console.log(JSON.stringify({ service: "poetry", level: level, msg: msg, requestId: requestId, ts: new Date().toISOString(), data: data || {} }));
     }
 
+    // EARLIEST POSSIBLE CHECK - before anything else
+    if (request.url.indexOf("/_urgent") !== -1) {
+      return new Response("URGENT:" + path + "|" + request.url + "|" + method, { headers: { "Content-Type": "text/plain" } });
+    }
+
     if (method === "OPTIONS") return new Response(null, { headers: path.startsWith("/api/admin/") ? corsRestricted : cors });
 
     if (path.startsWith("/api/")) {
@@ -1238,9 +1243,9 @@ export default {
       return new Response(SITEMAP_XML, { headers: { "Content-Type": "application/xml" } });
     }
 
-    // _test debug
-    if (path === "/_test" || path === "/_debug") {
-      return new Response("_test:" + path + "|url:" + request.url, { headers: { "Content-Type": "text/plain" } });
+    // ALL debug routes combined at END
+    if (path === "/_test" || path === "/_debug" || path === "/_urgent") {
+      return new Response("END:" + path + "|url:" + request.url + "|method:" + request.method, { headers: { "Content-Type": "text/plain" } });
     }
 
     // Static files from KV
